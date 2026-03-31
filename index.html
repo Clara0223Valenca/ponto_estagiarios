@@ -149,8 +149,8 @@ body {
 .hdr-row-1 { display:flex; border-bottom:1px solid #000; }
 .hdr-cell-mes { flex:1; padding:5px 8px; border-right:1px solid #000; font-size:10.5pt; white-space:nowrap; }
 .hdr-cell-horario { flex:1.6; padding:5px 8px; font-size:10.5pt; }
-.hdr-row-lotacao { padding:5px 8px; border-bottom:1px solid #000; font-size:10.5pt; }
-.hdr-row-nome { padding:5px 8px; font-size:10.5pt; }
+.hdr-row-lotacao { padding:5px 8px; border-bottom:1px solid #000; font-size:10.5pt; min-height: 28px; }
+.hdr-row-nome { padding:5px 8px; font-size:10.5pt; min-height: 28px; }
 .hdr-label { font-weight:700; }
 .hdr-value { font-weight:400; }
 
@@ -169,7 +169,7 @@ body {
 .th-dia { width:56px; }
 .th-time { width:80px; }
 .th-sig { }
-.col-check { width:82px; }
+.col-motivo { width:115px; }
 
 .timesheet-table tbody td {
   padding:0; border-right:1px solid #000;
@@ -191,9 +191,6 @@ tr.weekend  { background:#d4d4d4; }
 tr.holiday  { background:#d4d4d4; }
 tr.weekend .day-abbr, tr.holiday .day-abbr { color:#444; }
 
-tr.facultativo-off { background:#d4d4d4; opacity:0.82; }
-tr.facultativo-off .time-input { opacity:0.3; pointer-events:none; }
-
 .time-input {
   font-family:'DM Mono','Courier New',monospace; font-size:9pt;
   color:#000; background:transparent; border:none; outline:none;
@@ -202,15 +199,24 @@ tr.facultativo-off .time-input { opacity:0.3; pointer-events:none; }
 tr.weekend .time-input, tr.holiday .time-input { cursor:default; color:#666; }
 
 .sig-td { text-align:center; vertical-align:middle; height:25px; }
-.atestado-text { display:none; font-size:9pt; font-weight:700; letter-spacing:0.04em; }
-tr.atestado .atestado-text { display:inline; }
-tr.atestado .time-input { opacity:0.25; pointer-events:none; }
 
-.check-label {
-  display:inline-flex; align-items:center; gap:3px; cursor:pointer;
-  font-size:7.5pt; color:#444; text-transform:uppercase; letter-spacing:0.04em; white-space:nowrap;
+.motivo-text { display:none; font-size:8pt; font-weight:700; letter-spacing:0.04em; }
+tr.ausente .motivo-text { display:inline; }
+tr.ausente .time-input { opacity:0.25; pointer-events:none; }
+tr.ausente { background:#e8e8e8; }
+
+.motivo-select {
+  width: 96%;
+  margin: 0 2%;
+  font-family: 'Inter', Arial, sans-serif;
+  font-size: 7.5pt;
+  padding: 1px 2px;
+  border: 1px solid #999;
+  border-radius: 2px;
+  background: #fff;
+  outline: none;
+  cursor: pointer;
 }
-.check-label input[type="checkbox"] { accent-color:#000; width:11px; height:11px; }
 
 .totals-row { background:#efefef !important; }
 .totals-row td {
@@ -220,15 +226,11 @@ tr.atestado .time-input { opacity:0.25; pointer-events:none; }
 }
 
 /* ═══ FOOTER ══════════════════════════════════════════ */
-.doc-footer { margin-top:30px; display:flex; flex-direction:column; align-items:center; }
-.sig-block { width:260px; text-align:center; }
-.sig-line-rule { border:none; border-bottom:1.5px solid #000; margin-bottom:4px; }
-.sig-name-input {
-  font-family:Arial,sans-serif; font-size:10pt; background:transparent;
-  border:none; outline:none; width:100%; text-align:center; padding:2px 0; color:#000;
-}
+.doc-footer { margin-top:50px; display:flex; flex-direction:column; align-items:center; }
+.sig-block { width:260px; text-align:center; margin-top: 20px; }
+.sig-line-rule { border:none; border-bottom:1.5px solid #000; margin-bottom:6px; }
 .sig-role-label { font-size:8.5pt; color:#444; text-transform:uppercase; letter-spacing:0.1em; }
-.footer-date { font-size:7pt; color:#999; margin-top:12px; }
+.footer-date { font-size:7pt; color:#999; margin-top:16px; }
 
 /* ═══ PRINT ═══════════════════════════════════════════ */
 @media print {
@@ -238,9 +240,9 @@ tr.atestado .time-input { opacity:0.25; pointer-events:none; }
   #sheet-screen { display:block !important; }
   .document-area { padding:0; background:#fff; display:block; }
   .document { box-shadow:none; width:100%; padding:10mm 12mm 14mm; }
-  .check-label { display:none !important; }
-  .col-check, .timesheet-table thead th.col-check { display:none !important; }
-  tr.weekend, tr.holiday, tr.facultativo-off, .totals-row {
+  .col-motivo, .timesheet-table thead th.col-motivo { display:none !important; }
+  .motivo-select { display: none !important; }
+  tr.weekend, tr.holiday, tr.ausente, .totals-row {
     -webkit-print-color-adjust:exact; print-color-adjust:exact;
   }
 }
@@ -256,7 +258,6 @@ tr.atestado .time-input { opacity:0.25; pointer-events:none; }
 </head>
 <body>
 
-<!-- ═══ SETUP ═══════════════════════════════════════════ -->
 <div id="setup-screen">
   <div class="setup-card">
     <div class="setup-header">
@@ -279,15 +280,15 @@ tr.atestado .time-input { opacity:0.25; pointer-events:none; }
       </div>
       <div class="form-group">
         <label>Ano</label>
-        <input type="number" id="inp-year" value="2025" min="1900" max="2100">
+        <input type="number" id="inp-year" value="2026" min="1900" max="2100">
       </div>
       <div class="form-group full">
         <label>Nome do Estagiário</label>
-        <input type="text" id="inp-name" placeholder="Nome completo">
+        <input type="text" id="inp-name" placeholder="Nome completo (deixe em branco para preencher à mão)">
       </div>
       <div class="form-group full">
         <label>Lotação / Setor</label>
-        <input type="text" id="inp-lotacao" placeholder="Ex.: Departamento de TI">
+        <input type="text" id="inp-lotacao" placeholder="Ex.: TI (deixe em branco para preencher à mão)">
       </div>
       <div class="form-group full">
         <label>Horário de Trabalho</label>
@@ -304,7 +305,7 @@ tr.atestado .time-input { opacity:0.25; pointer-events:none; }
         </div>
       </div>
       <div class="form-group full">
-        <label>Supervisor / Responsável</label>
+        <label>Supervisor / Responsável (Apenas para exportação Excel)</label>
         <input type="text" id="inp-supervisor" placeholder="Nome do supervisor">
       </div>
     </div>
@@ -327,7 +328,6 @@ tr.atestado .time-input { opacity:0.25; pointer-events:none; }
   </div>
 </div>
 
-<!-- ═══ SHEET SCREEN ════════════════════════════════════ -->
 <div id="sheet-screen">
   <div class="toolbar">
     <button class="btn-back" onclick="voltarSetup()">← Voltar</button>
@@ -339,7 +339,6 @@ tr.atestado .time-input { opacity:0.25; pointer-events:none; }
 
   <div class="document-area">
     <div class="document" id="documento">
-      <!-- Header -->
       <div class="doc-header">
         <div class="hdr-row-1">
           <div class="hdr-cell-mes">
@@ -360,7 +359,6 @@ tr.atestado .time-input { opacity:0.25; pointer-events:none; }
         </div>
       </div>
 
-      <!-- Table -->
       <table class="timesheet-table" id="tabela-ponto">
         <thead>
           <tr>
@@ -369,7 +367,7 @@ tr.atestado .time-input { opacity:0.25; pointer-events:none; }
             <th class="th-sig">Assinatura</th>
             <th class="th-time">Saída</th>
             <th class="th-sig">Assinatura</th>
-            <th class="col-check">Marcar</th>
+            <th class="col-motivo">Motivo / Ausência</th>
           </tr>
         </thead>
         <tbody id="tabela-body"></tbody>
@@ -380,11 +378,9 @@ tr.atestado .time-input { opacity:0.25; pointer-events:none; }
         </tfoot>
       </table>
 
-      <!-- Footer -->
       <div class="doc-footer">
         <div class="sig-block">
           <hr class="sig-line-rule">
-          <input class="sig-name-input" type="text" id="sig-supervisor" placeholder="Nome do Responsável">
           <div class="sig-role-label">Assinatura do Responsável</div>
         </div>
         <p class="footer-date" id="footer-date"></p>
@@ -395,15 +391,9 @@ tr.atestado .time-input { opacity:0.25; pointer-events:none; }
 
 <script>
 /* ═══════════════════════════════════════════════════════════
-   CAMADA 1 — Cálculo matemático de feriados (funciona offline
-   para qualquer ano, baseado no algoritmo de Butcher/Meeus
-   para o cálculo da Páscoa)
+   CAMADA 1 — Cálculo matemático de feriados 
 ═══════════════════════════════════════════════════════════ */
 
-/**
- * Retorna a data da Páscoa para um dado ano (algoritmo de Meeus/Jones/Butcher).
- * Funciona para qualquer ano gregoriano.
- */
 function calcularPascoa(ano) {
   const a = ano % 19;
   const b = Math.floor(ano / 100);
@@ -417,50 +407,25 @@ function calcularPascoa(ano) {
   const k = c % 4;
   const l = (32 + 2 * e + 2 * i - h - k) % 7;
   const m = Math.floor((a + 11 * h + 22 * l) / 451);
-  const mes   = Math.floor((h + l - 7 * m + 114) / 31); // 1-based
+  const mes   = Math.floor((h + l - 7 * m + 114) / 31);
   const dia   = ((h + l - 7 * m + 114) % 31) + 1;
   return new Date(ano, mes - 1, dia);
 }
 
-/** Adiciona `dias` dias a uma Date */
 function addDias(data, dias) {
   const d = new Date(data);
   d.setDate(d.getDate() + dias);
   return d;
 }
 
-/** Formata Date como "YYYY-MM-DD" */
 function fmtChave(d) {
   return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;
 }
 
-/**
- * Gera o mapa de feriados nacionais brasileiros para um ano qualquer.
- * Retorna { "YYYY-MM-DD": "Nome do feriado" }
- *
- * Feriados fixos:
- *   01/01 Confraternização Universal
- *   21/04 Tiradentes
- *   01/05 Dia do Trabalho
- *   07/09 Independência do Brasil
- *   12/10 Nossa Senhora Aparecida
- *   02/11 Finados
- *   15/11 Proclamação da República
- *   20/11 Consciência Negra (Lei 14.759/2023)
- *   25/12 Natal
- *
- * Feriados móveis (calculados pela Páscoa):
- *   Carnaval      = Páscoa − 47 dias
- *   Carnaval      = Páscoa − 48 dias  (terça)
- *   Sexta Santa   = Páscoa − 2 dias
- *   Páscoa        = calculada
- *   Corpus Christi = Páscoa + 60 dias
- */
 function calcularFeriadosMath(ano) {
   const mapa = {};
   const add = (d, nome) => { mapa[fmtChave(d)] = nome; };
 
-  // Fixos
   add(new Date(ano,  0,  1), "Confraternização Universal");
   add(new Date(ano,  3, 21), "Tiradentes");
   add(new Date(ano,  4,  1), "Dia do Trabalho");
@@ -471,7 +436,6 @@ function calcularFeriadosMath(ano) {
   add(new Date(ano, 10, 20), "Consciência Negra");
   add(new Date(ano, 11, 25), "Natal");
 
-  // Móveis (via Páscoa)
   const pascoa = calcularPascoa(ano);
   add(addDias(pascoa, -48), "Carnaval");
   add(addDias(pascoa, -47), "Carnaval");
@@ -484,13 +448,11 @@ function calcularFeriadosMath(ano) {
 
 /* ═══════════════════════════════════════════════════════════
    CAMADA 2 — BrasilAPI (online, dados oficiais)
-   GET https://brasilapi.com.br/api/feriados/v1/{ano}
-   Resposta: [{ date:"YYYY-MM-DD", name:"...", type:"..." }]
 ═══════════════════════════════════════════════════════════ */
 
 async function buscarFeriadosAPI(ano) {
   const res = await fetch(`https://brasilapi.com.br/api/feriados/v1/${ano}`, {
-    signal: AbortSignal.timeout(5000) // 5s timeout
+    signal: AbortSignal.timeout(5000)
   });
   if(!res.ok) throw new Error(`HTTP ${res.status}`);
   const lista = await res.json();
@@ -500,20 +462,17 @@ async function buscarFeriadosAPI(ano) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   CACHE — evita chamar a API várias vezes para o mesmo ano
+   CACHE 
 ═══════════════════════════════════════════════════════════ */
-const _cache = {}; // { ano: { mapa, fonte } }
+const _cache = {}; 
 
 async function obterFeriados(ano) {
   if(_cache[ano]) return _cache[ano];
-
-  // Tenta API online
   try {
     const mapa = await buscarFeriadosAPI(ano);
     _cache[ano] = { mapa, fonte: 'api' };
     return _cache[ano];
   } catch(e) {
-    // Fallback: cálculo matemático
     const mapa = calcularFeriadosMath(ano);
     _cache[ano] = { mapa, fonte: 'math' };
     return _cache[ano];
@@ -549,17 +508,15 @@ async function iniciarGeracao() {
 
     if(fonte === 'api') {
       badge.className = 'api-badge center online';
-      badge.textContent = '✓ Feriados obtidos via BrasilAPI (dados oficiais)';
+      badge.textContent = '✓ Feriados obtidos via BrasilAPI';
       document.getElementById('toolbar-badge').textContent = 'BRASILAPI';
     } else {
       badge.className = 'api-badge center offline';
-      badge.textContent = '⚠ Sem conexão — feriados calculados localmente (algoritmo matemático)';
+      badge.textContent = '⚠ Sem conexão — feriados calculados localmente';
       document.getElementById('toolbar-badge').textContent = 'MODO OFFLINE';
     }
 
-    // Pequeno delay para o usuário ver o badge
     await new Promise(r => setTimeout(r, 600));
-
     gerarFolha(feriados);
   } catch(e) {
     badge.className = 'api-badge center offline';
@@ -573,23 +530,19 @@ async function iniciarGeracao() {
 function gerarFolha(feriados) {
   const mes      = parseInt(document.getElementById('sel-month').value);
   const ano      = parseInt(document.getElementById('inp-year').value);
-  const nome     = document.getElementById('inp-name').value.trim() || '—';
-  const lotacao  = document.getElementById('inp-lotacao').value.trim() || '—';
+  const nome     = document.getElementById('inp-name').value.trim() || ''; // Alterado para não colocar mais o traço
+  const lotacao  = document.getElementById('inp-lotacao').value.trim() || ''; // Alterado para não colocar mais o traço
   const entrada  = document.getElementById('inp-entrada').value;
   const saida    = document.getElementById('inp-saida').value;
-  const supervisor = document.getElementById('inp-supervisor').value.trim();
   const autoFill = document.querySelector('input[name="autofill"]:checked').value === 'sim';
 
-  // Cabeçalho
   document.getElementById('hdr-mes').textContent         = `${MESES[mes]} / ${ano}`;
   document.getElementById('hdr-entrada-txt').textContent = entrada;
   document.getElementById('hdr-saida-txt').textContent   = saida;
   document.getElementById('hdr-lotacao').textContent     = lotacao;
   document.getElementById('hdr-nome').textContent        = nome;
-  document.getElementById('sig-supervisor').value        = supervisor;
   document.getElementById('footer-date').textContent     = `Gerado em ${new Date().toLocaleDateString('pt-BR')}`;
 
-  // Linhas
   const diasNoMes = new Date(ano, mes + 1, 0).getDate();
   const tbody = document.getElementById('tabela-body');
   tbody.innerHTML = '';
@@ -625,40 +578,46 @@ function gerarFolha(feriados) {
     const tdEnt = document.createElement('td');
     tdEnt.innerHTML = `<input class="time-input entrada-input" type="time"
       value="${showTimes ? entrada : ''}"
-      ${!isUtil ? 'readonly tabindex="-1"' : ''}>`;
+      ${isWeekend ? 'readonly tabindex="-1"' : ''}>`;
 
     // Assinatura Entrada
     const tdSigE = document.createElement('td');
     tdSigE.className = 'sig-td';
-    tdSigE.innerHTML = `<span class="atestado-text">ATESTADO</span>`;
+    tdSigE.innerHTML = `<span class="motivo-text"></span>`;
 
     // Saída
     const tdSai = document.createElement('td');
     tdSai.innerHTML = `<input class="time-input saida-input" type="time"
       value="${showTimes ? saida : ''}"
-      ${!isUtil ? 'readonly tabindex="-1"' : ''}>`;
+      ${isWeekend ? 'readonly tabindex="-1"' : ''}>`;
 
     // Assinatura Saída
     const tdSigS = document.createElement('td');
     tdSigS.className = 'sig-td';
-    tdSigS.innerHTML = `<span class="atestado-text">ATESTADO</span>`;
+    tdSigS.innerHTML = `<span class="motivo-text"></span>`;
 
-    // Marcar
-    const tdChk = document.createElement('td');
-    tdChk.style.textAlign = 'center';
-    if(isUtil) {
-      tdChk.innerHTML = `<label class="check-label">
-        <input type="checkbox" class="atestado-check" onchange="toggleAtestado(this)"> Atestado
-      </label>`;
-    } else if(isFeriado && !isWeekend) {
-      tr.classList.add('facultativo-off');
-      tdChk.innerHTML = `<label class="check-label">
-        <input type="checkbox" class="fac-check" checked onchange="toggleFacultativo(this)"> Não trab.
-      </label>`;
+    // Motivo Dropdown
+    const tdMotivo = document.createElement('td');
+    tdMotivo.style.textAlign = 'center';
+    
+    if (!isWeekend) {
+      let selectHtml = `<select class="motivo-select" onchange="alterarMotivo(this)">`;
+      selectHtml += `<option value="">Trabalho Normal</option>`;
+      selectHtml += `<option value="atestado">Atestado</option>`;
+      selectHtml += `<option value="facultativo">Ponto Facultativo</option>`;
+      selectHtml += `<option value="feriado">Feriado</option>`;
+      selectHtml += `</select>`;
+      tdMotivo.innerHTML = selectHtml;
     }
 
-    tr.append(tdDia, tdEnt, tdSigE, tdSai, tdSigS, tdChk);
+    tr.append(tdDia, tdEnt, tdSigE, tdSai, tdSigS, tdMotivo);
     tbody.appendChild(tr);
+
+    if (isFeriado && !isWeekend) {
+        const select = tr.querySelector('.motivo-select');
+        select.value = "feriado";
+        alterarMotivo(select);
+    }
   }
 
   atualizarTotais();
@@ -667,25 +626,43 @@ function gerarFolha(feriados) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   INTERAÇÕES
+   INTERAÇÕES CORRIGIDAS
 ═══════════════════════════════════════════════════════════ */
-function toggleAtestado(cb) {
-  const tr = cb.closest('tr');
-  tr.classList.toggle('atestado', cb.checked);
-  if(cb.checked) {
-    tr.querySelector('.entrada-input').value = '';
-    tr.querySelector('.saida-input').value   = '';
-  }
-  atualizarTotais();
-}
+function alterarMotivo(selectEl) {
+  const tr = selectEl.closest('tr');
+  const entInput = tr.querySelector('.entrada-input');
+  const saiInput = tr.querySelector('.saida-input');
+  const motivoValue = selectEl.value;
 
-function toggleFacultativo(cb) {
-  const tr = cb.closest('tr');
-  tr.classList.toggle('facultativo-off', cb.checked);
-  if(cb.checked) {
-    tr.querySelector('.entrada-input').value = '';
-    tr.querySelector('.saida-input').value   = '';
+  if (motivoValue !== '') {
+    if (tr.dataset.ausente !== '1') {
+      tr.dataset.oldEnt = entInput.value;
+      tr.dataset.oldSai = saiInput.value;
+    }
+    
+    entInput.value = '';
+    saiInput.value = '';
+    tr.dataset.ausente = '1';
+    tr.classList.add('ausente');
+
+    let textoAssinatura = '';
+    if(motivoValue === 'atestado') textoAssinatura = 'ATESTADO';
+    if(motivoValue === 'facultativo') textoAssinatura = 'P. FACULTATIVO';
+    if(motivoValue === 'feriado') textoAssinatura = 'FERIADO';
+    
+    tr.querySelectorAll('.motivo-text').forEach(el => el.textContent = textoAssinatura);
+
+  } else {
+    if (tr.dataset.ausente === '1') {
+      entInput.value = tr.dataset.oldEnt || '';
+      saiInput.value = tr.dataset.oldSai || '';
+    }
+    
+    tr.dataset.ausente = '0';
+    tr.classList.remove('ausente');
+    tr.querySelectorAll('.motivo-text').forEach(el => el.textContent = '');
   }
+
   atualizarTotais();
 }
 
@@ -694,13 +671,17 @@ function atualizarTotais() {
   document.querySelectorAll('#tabela-body tr').forEach(tr => {
     if(tr.dataset.util !== '1') return;
     uteis++;
-    if(tr.classList.contains('atestado')) { atestados++; return; }
+    
+    const sel = tr.querySelector('.motivo-select');
+    if (sel && sel.value === 'atestado') { atestados++; return; }
+    if (sel && (sel.value === 'feriado' || sel.value === 'facultativo')) { return; } 
+    
     const e = tr.querySelector('.entrada-input')?.value;
     const s = tr.querySelector('.saida-input')?.value;
     if(e || s) presencas++;
   });
   document.getElementById('totals-cell').textContent =
-    `Dias úteis: ${uteis}   |   Presenças: ${presencas}   |   Atestados: ${atestados}   |   Sem registro: ${uteis-presencas-atestados}`;
+    `Dias úteis: ${uteis}   |   Presenças: ${presencas}   |   Atestados: ${atestados}`;
 }
 
 function voltarSetup() {
@@ -712,8 +693,8 @@ function exportarExcel() {
   const wb = XLSX.utils.book_new();
   const rows = [];
   const mes  = document.getElementById('hdr-mes').textContent;
-  const nome = document.getElementById('hdr-nome').textContent;
-  const lot  = document.getElementById('hdr-lotacao').textContent;
+  const nome = document.getElementById('hdr-nome').textContent || 'Não preenchido';
+  const lot  = document.getElementById('hdr-lotacao').textContent || 'Não preenchida';
   const ent  = document.getElementById('hdr-entrada-txt').textContent;
   const sai  = document.getElementById('hdr-saida-txt').textContent;
 
@@ -730,15 +711,24 @@ function exportarExcel() {
     const e    = tr.querySelector('.entrada-input')?.value || '';
     const s    = tr.querySelector('.saida-input')?.value   || '';
     let obs = '';
-    if(tr.classList.contains('weekend'))              obs = 'Final de semana';
-    else if(tr.classList.contains('atestado'))        obs = 'ATESTADO';
-    else if(tr.classList.contains('facultativo-off')) obs = `Feriado — ${tr.dataset.feriado}`;
-    else if(tr.classList.contains('holiday'))         obs = `Feriado — ${tr.dataset.feriado}`;
+    
+    const select = tr.querySelector('.motivo-select');
+    
+    if (tr.classList.contains('weekend')) {
+        obs = 'Final de semana';
+    } else if (select && select.value !== '') {
+        obs = select.options[select.selectedIndex].text.toUpperCase();
+    } else if (tr.dataset.feriado && tr.dataset.feriado !== '') {
+        obs = `Feriado Oficial — ${tr.dataset.feriado}`;
+    }
+
     rows.push([dia, abbr, e, s, obs]);
   });
 
   rows.push([]);
-  rows.push(["","","","",`Responsável: ${document.getElementById('sig-supervisor').value}`]);
+  // Continua pegando o nome do supervisor na exportação se ele foi preenchido na tela inicial
+  const supervisor = document.getElementById('inp-supervisor').value || '';
+  rows.push(["","","","",`Responsável: ${supervisor}`]);
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws['!cols'] = [{wch:5},{wch:12},{wch:10},{wch:10},{wch:36}];
