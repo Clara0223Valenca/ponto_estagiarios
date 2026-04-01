@@ -383,6 +383,9 @@ function renderTimesheet(holidayMap) {
   updateTotals();
   document.getElementById('setup-screen').style.display = 'none';
   document.getElementById('sheet-screen').style.display = 'block';
+
+  // Apply mobile sheet scaling after the sheet is visible
+  applyMobileSheetScale();
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -571,3 +574,44 @@ function exportToExcel() {
 document.addEventListener('input', event => {
   if (event.target.classList.contains('time-input')) updateTotals();
 });
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE SHEET SCALING
+   Scales the A4 document sheet to fit the viewport on small
+   screens. Has no effect on desktop (> 680px).
+═══════════════════════════════════════════════════════════ */
+
+/**
+ * Calculates the correct CSS scale so the 794px-wide document
+ * sheet fits within the current viewport, then applies it.
+ * Called after render and on resize.
+ */
+function applyMobileSheetScale() {
+  const sheet = document.querySelector('.document-sheet');
+  if (!sheet) return;
+
+  const SHEET_NATURAL_WIDTH = 794; // matches width:794px set in CSS for mobile
+  const MOBILE_BREAKPOINT   = 680;
+
+  if (window.innerWidth > MOBILE_BREAKPOINT) {
+    // Desktop: remove any inline scale so CSS rules take over
+    sheet.style.transform    = '';
+    sheet.style.marginBottom = '';
+    return;
+  }
+
+  // Available width = viewport minus document-area horizontal padding (0.5rem each side = ~16px total)
+  const availableWidth = window.innerWidth - 16;
+  const scale          = availableWidth / SHEET_NATURAL_WIDTH;
+
+  sheet.style.transform    = `scale(${scale})`;
+  // After scaling down, the element still occupies its original height in layout.
+  // Negative margin-bottom compensates so there is no giant whitespace gap.
+  const naturalHeight  = sheet.scrollHeight;
+  const scaledHeight   = naturalHeight * scale;
+  const excess         = naturalHeight - scaledHeight;
+  sheet.style.marginBottom = `-${excess}px`;
+}
+
+// Re-apply on resize (e.g. orientation change)
+window.addEventListener('resize', applyMobileSheetScale);
