@@ -1,376 +1,189 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Folha de Ponto — Estagiários</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  font-family: 'Inter', Arial, sans-serif;
-  background: #d0d0d0;
-  color: #111;
-  min-height: 100vh;
-}
-
-/* ═══ SETUP ═══════════════════════════════════════════ */
-#setup-screen {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  background: #e4e4e4;
-}
-
-.setup-card {
-  background: #fff;
-  border: 1px solid #bbb;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.13);
-  max-width: 620px;
-  width: 100%;
-  padding: 2.8rem 3rem;
-}
-
-.setup-header {
-  text-align: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1.2rem;
-  border-bottom: 2px solid #111;
-}
-.setup-header .eyebrow { font-size:0.63rem; letter-spacing:0.2em; text-transform:uppercase; color:#888; margin-bottom:0.4rem; }
-.setup-header h1 { font-size:1.65rem; font-weight:700; }
-.setup-header .sub { font-size:0.83rem; color:#666; margin-top:0.25rem; }
-
-.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.1rem 1.6rem; }
-.form-group { display:flex; flex-direction:column; gap:0.3rem; }
-.form-group.full { grid-column:1/-1; }
-.form-group label { font-size:0.65rem; letter-spacing:0.12em; text-transform:uppercase; color:#666; font-weight:600; }
-.form-group input, .form-group select {
-  font-family:'Inter',sans-serif; font-size:0.9rem; color:#111;
-  background:#f6f6f6; border:1px solid #ccc; border-radius:2px;
-  padding:0.48rem 0.65rem; outline:none;
-  transition:border-color 0.15s,background 0.15s; width:100%;
-}
-.form-group input:focus, .form-group select:focus { border-color:#333; background:#fff; }
-
-.time-row { display:grid; grid-template-columns:1fr auto 1fr; align-items:end; gap:0.5rem; }
-.time-sep { font-size:1rem; color:#888; padding-bottom:0.48rem; text-align:center; }
-
-.auto-fill-section {
-  margin:1.6rem 0 0; padding:0.9rem 1.1rem;
-  background:#f4f4f4; border-left:3px solid #555;
-}
-.auto-fill-section p { font-size:0.86rem; color:#444; margin-bottom:0.6rem; }
-.radio-group { display:flex; gap:2rem; flex-wrap:wrap; }
-.radio-group label { display:flex; align-items:center; gap:0.4rem; font-size:0.8rem; cursor:pointer; color:#333; }
-.radio-group input[type="radio"] { accent-color:#333; width:14px; height:14px; }
-
-.btn-generate {
-  width:100%; margin-top:1.8rem; padding:0.82rem 2rem;
-  background:#111; color:#fff; border:none;
-  font-family:'Inter',sans-serif; font-size:0.76rem; font-weight:600;
-  letter-spacing:0.14em; text-transform:uppercase; cursor:pointer; transition:background 0.2s;
-}
-.btn-generate:hover { background:#333; }
-.btn-generate:disabled { background:#888; cursor:wait; }
-
-/* Loading state */
-#loading-indicator {
-  display:none;
-  align-items:center; gap:0.6rem;
-  margin-top:1rem;
-  font-size:0.8rem; color:#555;
-  justify-content:center;
-}
-.spinner {
-  width:16px; height:16px;
-  border:2px solid #ccc; border-top-color:#333;
-  border-radius:50%;
-  animation:spin 0.7s linear infinite;
-}
-@keyframes spin { to { transform:rotate(360deg); } }
-
-/* API status badge */
-.api-badge {
-  display:none;
-  font-size:0.63rem; letter-spacing:0.1em; text-transform:uppercase;
-  padding:0.2rem 0.55rem; border-radius:2px; margin-top:0.6rem;
-  font-weight:600;
-}
-.api-badge.online  { background:#d4edda; color:#155724; display:block; }
-.api-badge.offline { background:#fff3cd; color:#856404; display:block; }
-.api-badge.center  { text-align:center; }
-
-/* ═══ TOOLBAR ══════════════════════════════════════════ */
-#sheet-screen { display:none; }
-.toolbar {
-  background:#1a1a1a; color:#fff;
-  padding:0.7rem 1.5rem; display:flex; align-items:center; gap:0.75rem;
-  flex-wrap:wrap; position:sticky; top:0; z-index:100;
-}
-.toolbar-title { font-size:0.68rem; letter-spacing:0.15em; text-transform:uppercase; opacity:0.45; margin-right:auto; }
-.btn-tool {
-  font-family:'Inter',sans-serif; font-size:0.67rem; font-weight:600;
-  letter-spacing:0.1em; text-transform:uppercase; padding:0.42rem 1rem;
-  cursor:pointer; border:1px solid rgba(255,255,255,0.25); background:transparent; color:#fff; transition:all 0.15s;
-}
-.btn-tool:hover { background:rgba(255,255,255,0.1); }
-.btn-tool.primary { background:#fff; color:#111; border-color:#fff; }
-.btn-tool.primary:hover { background:#ddd; }
-.btn-back { font-size:0.67rem; font-weight:500; background:none; border:none; color:rgba(255,255,255,0.4); cursor:pointer; padding:0.4rem 0; font-family:'Inter',sans-serif; }
-.btn-back:hover { color:#fff; }
-
-/* ═══ DOCUMENT AREA ════════════════════════════════════ */
-.document-area {
-  padding:2.5rem 1.5rem 4rem;
-  background:#d0d0d0;
-  min-height:calc(100vh - 46px);
-  display:flex; justify-content:center;
-}
-
-.document {
-  background:#fff;
-  width:210mm;
-  min-height:297mm;
-  padding:14mm 15mm 18mm;
-  box-shadow:0 2px 14px rgba(0,0,0,0.28);
-  font-family:Arial, sans-serif;
-  font-size:11pt;
-  color:#000;
-}
-
-/* ═══ DOC HEADER ══════════════════════════════════════ */
-.doc-header { border:1.5px solid #000; margin-bottom:0; }
-
-.hdr-row-1 { display:flex; border-bottom:1px solid #000; }
-.hdr-cell-mes { flex:1; padding:5px 8px; border-right:1px solid #000; font-size:10.5pt; white-space:nowrap; }
-.hdr-cell-horario { flex:1.6; padding:5px 8px; font-size:10.5pt; }
-.hdr-row-lotacao { padding:5px 8px; border-bottom:1px solid #000; font-size:10.5pt; min-height: 28px; }
-.hdr-row-nome { padding:5px 8px; font-size:10.5pt; min-height: 28px; }
-.hdr-label { font-weight:700; }
-.hdr-value { font-weight:400; }
-
-/* ═══ TABLE ═══════════════════════════════════════════ */
-.timesheet-table {
-  width:100%; border-collapse:collapse;
-  border:1.5px solid #000; border-top:none;
-  font-family:Arial, sans-serif; font-size:10pt;
-}
-
-.timesheet-table thead th {
-  font-weight:700; font-size:10pt; padding:5px 4px;
-  border:1px solid #000; border-top:1.5px solid #000;
-  text-align:center; background:#fff;
-}
-.th-dia { width:56px; }
-.th-time { width:80px; }
-.th-sig { }
-.col-motivo { width:115px; }
-
-.timesheet-table tbody td {
-  padding:0; border-right:1px solid #000;
-  vertical-align:middle; height:25px;
-}
-.timesheet-table tbody td:last-child { border-right:none; }
-.timesheet-table tbody tr { border-bottom:1px solid #000; }
-.timesheet-table tbody tr:last-child { border-bottom:1.5px solid #000; }
-
-.day-cell {
-  display:flex; align-items:center; justify-content:center;
-  gap:3px; height:25px; padding:0 3px;
-}
-.day-num { font-size:10pt; font-weight:700; min-width:18px; text-align:center; }
-.day-abbr { font-size:7.5pt; color:#555; text-transform:uppercase; }
-.holiday-info { font-size:6.5pt; font-style:italic; color:#555; margin-left:1px; }
-
-tr.weekend  { background:#d4d4d4; }
-tr.holiday  { background:#d4d4d4; }
-tr.weekend .day-abbr, tr.holiday .day-abbr { color:#444; }
-
-.time-input {
-  font-family:'DM Mono','Courier New',monospace; font-size:9pt;
-  color:#000; background:transparent; border:none; outline:none;
-  width:100%; text-align:center; padding:0 3px; height:25px; cursor:text;
-}
-tr.weekend .time-input, tr.holiday .time-input { cursor:default; color:#666; }
-
-.sig-td { text-align:center; vertical-align:middle; height:25px; }
-
-.motivo-text { display:none; font-size:8pt; font-weight:700; letter-spacing:0.04em; }
-tr.ausente .motivo-text { display:inline; }
-tr.ausente .time-input { opacity:0.25; pointer-events:none; }
-tr.ausente { background:#e8e8e8; }
-
-.motivo-select {
-  width: 96%;
-  margin: 0 2%;
-  font-family: 'Inter', Arial, sans-serif;
-  font-size: 7.5pt;
-  padding: 1px 2px;
-  border: 1px solid #999;
-  border-radius: 2px;
-  background: #fff;
-  outline: none;
-  cursor: pointer;
-}
-
-.totals-row { background:#efefef !important; }
-.totals-row td {
-  font-size:8pt; font-family:Arial,sans-serif;
-  padding:5px 8px !important; height:auto !important;
-  border-top:1.5px solid #000; font-weight:600;
-}
-
-/* ═══ FOOTER ══════════════════════════════════════════ */
-.doc-footer { margin-top:50px; display:flex; flex-direction:column; align-items:center; }
-.sig-block { width:260px; text-align:center; margin-top: 20px; }
-.sig-line-rule { border:none; border-bottom:1.5px solid #000; margin-bottom:6px; }
-.sig-role-label { font-size:8.5pt; color:#444; text-transform:uppercase; letter-spacing:0.1em; }
-.footer-date { font-size:7pt; color:#999; margin-top:16px; }
-
-/* ═══ PRINT ═══════════════════════════════════════════ */
-@media print {
-  body { background:#fff; }
-  .toolbar { display:none !important; }
-  #setup-screen { display:none !important; }
-  #sheet-screen { display:block !important; }
-  .document-area { padding:0; background:#fff; display:block; }
-  .document { box-shadow:none; width:100%; padding:10mm 12mm 14mm; }
-  .col-motivo, .timesheet-table thead th.col-motivo { display:none !important; }
-  .motivo-select { display: none !important; }
-  tr.weekend, tr.holiday, tr.ausente, .totals-row {
-    -webkit-print-color-adjust:exact; print-color-adjust:exact;
-  }
-}
-
-@media (max-width:680px) {
-  .setup-card { padding:2rem 1.4rem; }
-  .form-grid { grid-template-columns:1fr; }
-  .form-group.full { grid-column:1; }
-  .document-area { padding:0.5rem 0 3rem; }
-  .document { width:100%; padding:4mm; }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Folha de Ponto — Estagiários</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+<!-- ═══════════════════════════════════════════════════════
+     SETUP SCREEN
+════════════════════════════════════════════════════════ -->
 <div id="setup-screen">
   <div class="setup-card">
+
     <div class="setup-header">
       <p class="eyebrow">Controle de Frequência</p>
       <h1>Folha de Ponto</h1>
-      <p class="sub">Geração automática para estagiários</p>
+      <p class="tagline">Geração automática para estagiários</p>
     </div>
 
     <div class="form-grid">
-      <div class="form-group">
-        <label>Mês</label>
+
+      <!-- Month / Year -->
+      <div class="form-field">
+        <label for="sel-month">Mês</label>
         <select id="sel-month">
-          <option value="0">Janeiro</option><option value="1">Fevereiro</option>
-          <option value="2">Março</option><option value="3">Abril</option>
-          <option value="4">Maio</option><option value="5">Junho</option>
-          <option value="6">Julho</option><option value="7">Agosto</option>
-          <option value="8">Setembro</option><option value="9">Outubro</option>
-          <option value="10">Novembro</option><option value="11">Dezembro</option>
+          <option value="0">Janeiro</option>
+          <option value="1">Fevereiro</option>
+          <option value="2">Março</option>
+          <option value="3">Abril</option>
+          <option value="4">Maio</option>
+          <option value="5">Junho</option>
+          <option value="6">Julho</option>
+          <option value="7">Agosto</option>
+          <option value="8">Setembro</option>
+          <option value="9">Outubro</option>
+          <option value="10">Novembro</option>
+          <option value="11">Dezembro</option>
         </select>
       </div>
-      <div class="form-group">
-        <label>Ano</label>
+
+      <div class="form-field">
+        <label for="inp-year">Ano</label>
         <input type="number" id="inp-year" value="2026" min="1900" max="2100">
       </div>
-      <div class="form-group full">
-        <label>Nome do Estagiário</label>
-        <input type="text" id="inp-name" placeholder="Nome completo (deixe em branco para preencher à mão)">
+
+      <!-- Employee info -->
+      <div class="form-field full">
+        <label for="inp-name">Nome do Estagiário</label>
+        <input type="text" id="inp-name"
+          placeholder="Nome completo (deixe em branco para preencher à mão)">
       </div>
-      <div class="form-group full">
-        <label>Lotação / Setor</label>
-        <input type="text" id="inp-lotacao" placeholder="Ex.: TI (deixe em branco para preencher à mão)">
+
+      <div class="form-field full">
+        <label for="inp-department">Lotação / Setor</label>
+        <input type="text" id="inp-department"
+          placeholder="Ex.: TI (deixe em branco para preencher à mão)">
       </div>
-      <div class="form-group full">
+
+      <!-- Work hours + tolerance toggle -->
+      <div class="form-field full">
         <label>Horário de Trabalho</label>
-        <div class="time-row">
-          <div class="form-group" style="gap:0.3rem">
-            <label>Entrada</label>
-            <input type="time" id="inp-entrada" value="08:00">
+
+        <div class="time-range-row">
+          <div class="form-field" style="gap:0.3rem">
+            <label for="inp-check-in">Entrada</label>
+            <input type="time" id="inp-check-in" value="08:00">
           </div>
-          <div class="time-sep">às</div>
-          <div class="form-group" style="gap:0.3rem">
-            <label>Saída</label>
-            <input type="time" id="inp-saida" value="12:00">
+          <div class="time-range-separator">às</div>
+          <div class="form-field" style="gap:0.3rem">
+            <label for="inp-check-out">Saída</label>
+            <input type="time" id="inp-check-out" value="12:00">
           </div>
         </div>
+
+        <!-- Random tolerance toggle -->
+        <label class="tolerance-toggle-row" id="tolerance-row" for="chk-tolerance">
+          <div class="tolerance-label-group">
+            <span class="label-title">🎲 Tolerância Aleatória</span>
+            <span class="label-description">Gera minutos aleatórios sem mudar o total de horas trabalhadas</span>
+          </div>
+          <label class="toggle-switch" onclick="event.stopPropagation()">
+            <input type="checkbox" id="chk-tolerance" onchange="toggleToleranceStyle()">
+            <span class="toggle-track"></span>
+          </label>
+        </label>
       </div>
-      <div class="form-group full">
-        <label>Supervisor / Responsável (Apenas para exportação Excel)</label>
+
+      <!-- Supervisor (Excel only) -->
+      <div class="form-field full">
+        <label for="inp-supervisor">
+          Supervisor / Responsável
+          <small style="font-weight:400; text-transform:none; letter-spacing:0">
+            (apenas para exportação Excel)
+          </small>
+        </label>
         <input type="text" id="inp-supervisor" placeholder="Nome do supervisor">
       </div>
-    </div>
 
-    <div class="auto-fill-section">
+    </div><!-- /form-grid -->
+
+    <!-- Auto-fill option -->
+    <div class="autofill-section">
       <p>Deseja preencher automaticamente os horários de entrada e saída para todos os dias úteis?</p>
       <div class="radio-group">
-        <label><input type="radio" name="autofill" value="sim" checked> Sim, preencher automaticamente</label>
-        <label><input type="radio" name="autofill" value="nao"> Não, deixar em branco</label>
+        <label>
+          <input type="radio" name="autofill" value="yes" checked>
+          Sim, preencher automaticamente
+        </label>
+        <label>
+          <input type="radio" name="autofill" value="no">
+          Não, deixar em branco
+        </label>
       </div>
     </div>
 
-    <button class="btn-generate" id="btn-gerar" onclick="iniciarGeracao()">Gerar Folha de Ponto</button>
+    <button class="btn-generate" id="btn-generate" onclick="handleGenerateClick()">
+      Gerar Folha de Ponto
+    </button>
 
     <div id="loading-indicator">
       <div class="spinner"></div>
-      <span id="loading-text">Buscando feriados…</span>
+      <span>Buscando feriados…</span>
     </div>
-    <div id="api-badge" class="api-badge center"></div>
-  </div>
-</div>
+    <div id="api-status-badge" class="api-badge center"></div>
 
+  </div><!-- /setup-card -->
+</div><!-- /setup-screen -->
+
+
+<!-- ═══════════════════════════════════════════════════════
+     SHEET SCREEN
+════════════════════════════════════════════════════════ -->
 <div id="sheet-screen">
+
   <div class="toolbar">
-    <button class="btn-back" onclick="voltarSetup()">← Voltar</button>
+    <button class="btn-back" onclick="goBackToSetup()">← Voltar</button>
     <span class="toolbar-title">Folha de Ponto — Estagiário</span>
-    <span id="toolbar-badge" style="font-size:0.6rem;opacity:0.45;letter-spacing:0.1em;"></span>
-    <button class="btn-tool primary" onclick="window.print()">Imprimir / Gerar PDF</button>
-    <button class="btn-tool" onclick="exportarExcel()">Exportar Excel</button>
+    <span id="toolbar-source-badge" style="font-size:0.6rem; opacity:0.45; letter-spacing:0.1em;"></span>
+    <button class="btn-toolbar primary" onclick="window.print()">Imprimir / Gerar PDF</button>
+    <button class="btn-toolbar" onclick="exportToExcel()">Exportar Excel</button>
   </div>
 
   <div class="document-area">
-    <div class="document" id="documento">
+    <div class="document-sheet">
+
+      <!-- Document header -->
       <div class="doc-header">
-        <div class="hdr-row-1">
-          <div class="hdr-cell-mes">
-            <span class="hdr-label">Mês: </span><span class="hdr-value" id="hdr-mes"></span>
+        <div class="doc-header-row-top">
+          <div class="doc-header-month">
+            <span class="field-label">Mês: </span>
+            <span class="field-value" id="hdr-month"></span>
           </div>
-          <div class="hdr-cell-horario">
-            <span class="hdr-label">Horário de Trabalho: das </span>
-            <span class="hdr-value" id="hdr-entrada-txt"></span>
-            <span class="hdr-label"> às </span>
-            <span class="hdr-value" id="hdr-saida-txt"></span>
+          <div class="doc-header-hours">
+            <span class="field-label">Horário de Trabalho: das </span>
+            <span class="field-value" id="hdr-check-in"></span>
+            <span class="field-label"> às </span>
+            <span class="field-value" id="hdr-check-out"></span>
           </div>
         </div>
-        <div class="hdr-row-lotacao">
-          <span class="hdr-label">Lotação: </span><span class="hdr-value" id="hdr-lotacao"></span>
+        <div class="doc-header-row-department">
+          <span class="field-label">Lotação: </span>
+          <span class="field-value" id="hdr-department"></span>
         </div>
-        <div class="hdr-row-nome">
-          <span class="hdr-label">Nome: </span><span class="hdr-value" id="hdr-nome"></span>
+        <div class="doc-header-row-name">
+          <span class="field-label">Nome: </span>
+          <span class="field-value" id="hdr-employee-name"></span>
         </div>
       </div>
 
-      <table class="timesheet-table" id="tabela-ponto">
+      <!-- Timesheet table -->
+      <table class="timesheet-table">
         <thead>
           <tr>
-            <th class="th-dia">Dia</th>
-            <th class="th-time">Entrada</th>
-            <th class="th-sig">Assinatura</th>
-            <th class="th-time">Saída</th>
-            <th class="th-sig">Assinatura</th>
-            <th class="col-motivo">Motivo / Ausência</th>
+            <th class="col-day">Dia</th>
+            <th class="col-time">Entrada</th>
+            <th class="col-sig">Assinatura</th>
+            <th class="col-time">Saída</th>
+            <th class="col-sig">Assinatura</th>
+            <th class="col-absence">Motivo / Ausência</th>
           </tr>
         </thead>
-        <tbody id="tabela-body"></tbody>
+        <tbody id="table-body"></tbody>
         <tfoot>
           <tr class="totals-row">
             <td colspan="6" id="totals-cell"></td>
@@ -378,376 +191,25 @@ tr.ausente { background:#e8e8e8; }
         </tfoot>
       </table>
 
+      <!-- Document footer -->
       <div class="doc-footer">
-        <div class="sig-block">
-          <hr class="sig-line-rule">
-          <div class="sig-role-label">Assinatura do Responsável</div>
+        <div class="signature-block">
+          <hr class="signature-line">
+          <div class="signature-role">Assinatura do Responsável</div>
         </div>
-        <p class="footer-date" id="footer-date"></p>
+        <p class="generated-date" id="footer-generated-date"></p>
       </div>
-    </div>
-  </div>
-</div>
 
-<script>
-/* ═══════════════════════════════════════════════════════════
-   CAMADA 1 — Cálculo matemático de feriados 
-═══════════════════════════════════════════════════════════ */
+    </div><!-- /document-sheet -->
+  </div><!-- /document-area -->
 
-function calcularPascoa(ano) {
-  const a = ano % 19;
-  const b = Math.floor(ano / 100);
-  const c = ano % 100;
-  const d = Math.floor(b / 4);
-  const e = b % 4;
-  const f = Math.floor((b + 8) / 25);
-  const g = Math.floor((b - f + 1) / 3);
-  const h = (19 * a + b - d - g + 15) % 30;
-  const i = Math.floor(c / 4);
-  const k = c % 4;
-  const l = (32 + 2 * e + 2 * i - h - k) % 7;
-  const m = Math.floor((a + 11 * h + 22 * l) / 451);
-  const mes   = Math.floor((h + l - 7 * m + 114) / 31);
-  const dia   = ((h + l - 7 * m + 114) % 31) + 1;
-  return new Date(ano, mes - 1, dia);
-}
+</div><!-- /sheet-screen -->
 
-function addDias(data, dias) {
-  const d = new Date(data);
-  d.setDate(d.getDate() + dias);
-  return d;
-}
+<!-- External libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-function fmtChave(d) {
-  return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;
-}
+<!-- Application logic -->
+<script src="app.js"></script>
 
-function calcularFeriadosMath(ano) {
-  const mapa = {};
-  const add = (d, nome) => { mapa[fmtChave(d)] = nome; };
-
-  add(new Date(ano,  0,  1), "Confraternização Universal");
-  add(new Date(ano,  3, 21), "Tiradentes");
-  add(new Date(ano,  4,  1), "Dia do Trabalho");
-  add(new Date(ano,  8,  7), "Independência do Brasil");
-  add(new Date(ano,  9, 12), "Nossa Senhora Aparecida");
-  add(new Date(ano, 10,  2), "Finados");
-  add(new Date(ano, 10, 15), "Proclamação da República");
-  add(new Date(ano, 10, 20), "Consciência Negra");
-  add(new Date(ano, 11, 25), "Natal");
-
-  const pascoa = calcularPascoa(ano);
-  add(addDias(pascoa, -48), "Carnaval");
-  add(addDias(pascoa, -47), "Carnaval");
-  add(addDias(pascoa,  -2), "Sexta-feira Santa");
-  add(pascoa,               "Páscoa");
-  add(addDias(pascoa,  60), "Corpus Christi");
-
-  return mapa;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   CAMADA 2 — BrasilAPI (online, dados oficiais)
-═══════════════════════════════════════════════════════════ */
-
-async function buscarFeriadosAPI(ano) {
-  const res = await fetch(`https://brasilapi.com.br/api/feriados/v1/${ano}`, {
-    signal: AbortSignal.timeout(5000)
-  });
-  if(!res.ok) throw new Error(`HTTP ${res.status}`);
-  const lista = await res.json();
-  const mapa = {};
-  lista.forEach(f => { mapa[f.date] = f.name; });
-  return mapa;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   CACHE 
-═══════════════════════════════════════════════════════════ */
-const _cache = {}; 
-
-async function obterFeriados(ano) {
-  if(_cache[ano]) return _cache[ano];
-  try {
-    const mapa = await buscarFeriadosAPI(ano);
-    _cache[ano] = { mapa, fonte: 'api' };
-    return _cache[ano];
-  } catch(e) {
-    const mapa = calcularFeriadosMath(ano);
-    _cache[ano] = { mapa, fonte: 'math' };
-    return _cache[ano];
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════
-   UTILITÁRIOS
-═══════════════════════════════════════════════════════════ */
-const DIASEM = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
-const MESES  = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
-                 "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-
-function p2(n) { return String(n).padStart(2,'0'); }
-
-/* ═══════════════════════════════════════════════════════════
-   FLUXO PRINCIPAL
-═══════════════════════════════════════════════════════════ */
-async function iniciarGeracao() {
-  const btn = document.getElementById('btn-gerar');
-  const loading = document.getElementById('loading-indicator');
-  const badge = document.getElementById('api-badge');
-
-  btn.disabled = true;
-  loading.style.display = 'flex';
-  badge.className = 'api-badge center';
-  badge.textContent = '';
-
-  const ano = parseInt(document.getElementById('inp-year').value);
-
-  try {
-    const { mapa: feriados, fonte } = await obterFeriados(ano);
-
-    if(fonte === 'api') {
-      badge.className = 'api-badge center online';
-      badge.textContent = '✓ Feriados obtidos via BrasilAPI';
-      document.getElementById('toolbar-badge').textContent = 'BRASILAPI';
-    } else {
-      badge.className = 'api-badge center offline';
-      badge.textContent = '⚠ Sem conexão — feriados calculados localmente';
-      document.getElementById('toolbar-badge').textContent = 'MODO OFFLINE';
-    }
-
-    await new Promise(r => setTimeout(r, 600));
-    gerarFolha(feriados);
-  } catch(e) {
-    badge.className = 'api-badge center offline';
-    badge.textContent = 'Erro ao obter feriados. Tente novamente.';
-  } finally {
-    btn.disabled = false;
-    loading.style.display = 'none';
-  }
-}
-
-function gerarFolha(feriados) {
-  const mes      = parseInt(document.getElementById('sel-month').value);
-  const ano      = parseInt(document.getElementById('inp-year').value);
-  const nome     = document.getElementById('inp-name').value.trim() || ''; // Alterado para não colocar mais o traço
-  const lotacao  = document.getElementById('inp-lotacao').value.trim() || ''; // Alterado para não colocar mais o traço
-  const entrada  = document.getElementById('inp-entrada').value;
-  const saida    = document.getElementById('inp-saida').value;
-  const autoFill = document.querySelector('input[name="autofill"]:checked').value === 'sim';
-
-  document.getElementById('hdr-mes').textContent         = `${MESES[mes]} / ${ano}`;
-  document.getElementById('hdr-entrada-txt').textContent = entrada;
-  document.getElementById('hdr-saida-txt').textContent   = saida;
-  document.getElementById('hdr-lotacao').textContent     = lotacao;
-  document.getElementById('hdr-nome').textContent        = nome;
-  document.getElementById('footer-date').textContent     = `Gerado em ${new Date().toLocaleDateString('pt-BR')}`;
-
-  const diasNoMes = new Date(ano, mes + 1, 0).getDate();
-  const tbody = document.getElementById('tabela-body');
-  tbody.innerHTML = '';
-
-  for(let d = 1; d <= diasNoMes; d++) {
-    const dt      = new Date(ano, mes, d);
-    const dow     = dt.getDay();
-    const chave   = `${ano}-${p2(mes+1)}-${p2(d)}`;
-    const ferNome = feriados[chave];
-
-    const isWeekend = dow === 0 || dow === 6;
-    const isFeriado = !!ferNome;
-    const isUtil    = !isWeekend && !isFeriado;
-    const showTimes = isUtil && autoFill;
-
-    const tr = document.createElement('tr');
-    if(isWeekend) tr.classList.add('weekend');
-    if(isFeriado) tr.classList.add('holiday');
-    tr.dataset.dia     = d;
-    tr.dataset.chave   = chave;
-    tr.dataset.util    = isUtil ? '1' : '0';
-    tr.dataset.feriado = ferNome || '';
-
-    // Dia
-    const tdDia = document.createElement('td');
-    const ferSpan = isFeriado ? `<span class="holiday-info">${ferNome}</span>` : '';
-    tdDia.innerHTML = `<div class="day-cell">
-      <span class="day-num">${d}</span>
-      <span class="day-abbr">${DIASEM[dow]}${ferSpan}</span>
-    </div>`;
-
-    // Entrada
-    const tdEnt = document.createElement('td');
-    tdEnt.innerHTML = `<input class="time-input entrada-input" type="time"
-      value="${showTimes ? entrada : ''}"
-      ${isWeekend ? 'readonly tabindex="-1"' : ''}>`;
-
-    // Assinatura Entrada
-    const tdSigE = document.createElement('td');
-    tdSigE.className = 'sig-td';
-    tdSigE.innerHTML = `<span class="motivo-text"></span>`;
-
-    // Saída
-    const tdSai = document.createElement('td');
-    tdSai.innerHTML = `<input class="time-input saida-input" type="time"
-      value="${showTimes ? saida : ''}"
-      ${isWeekend ? 'readonly tabindex="-1"' : ''}>`;
-
-    // Assinatura Saída
-    const tdSigS = document.createElement('td');
-    tdSigS.className = 'sig-td';
-    tdSigS.innerHTML = `<span class="motivo-text"></span>`;
-
-    // Motivo Dropdown
-    const tdMotivo = document.createElement('td');
-    tdMotivo.style.textAlign = 'center';
-    
-    if (!isWeekend) {
-      let selectHtml = `<select class="motivo-select" onchange="alterarMotivo(this)">`;
-      selectHtml += `<option value="">Trabalho Normal</option>`;
-      selectHtml += `<option value="atestado">Atestado</option>`;
-      selectHtml += `<option value="facultativo">Ponto Facultativo</option>`;
-      selectHtml += `<option value="feriado">Feriado</option>`;
-      selectHtml += `</select>`;
-      tdMotivo.innerHTML = selectHtml;
-    }
-
-    tr.append(tdDia, tdEnt, tdSigE, tdSai, tdSigS, tdMotivo);
-    tbody.appendChild(tr);
-
-    if (isFeriado && !isWeekend) {
-        const select = tr.querySelector('.motivo-select');
-        select.value = "feriado";
-        alterarMotivo(select);
-    }
-  }
-
-  atualizarTotais();
-  document.getElementById('setup-screen').style.display = 'none';
-  document.getElementById('sheet-screen').style.display = 'block';
-}
-
-/* ═══════════════════════════════════════════════════════════
-   INTERAÇÕES CORRIGIDAS
-═══════════════════════════════════════════════════════════ */
-function alterarMotivo(selectEl) {
-  const tr = selectEl.closest('tr');
-  const entInput = tr.querySelector('.entrada-input');
-  const saiInput = tr.querySelector('.saida-input');
-  const motivoValue = selectEl.value;
-
-  if (motivoValue !== '') {
-    if (tr.dataset.ausente !== '1') {
-      tr.dataset.oldEnt = entInput.value;
-      tr.dataset.oldSai = saiInput.value;
-    }
-    
-    entInput.value = '';
-    saiInput.value = '';
-    tr.dataset.ausente = '1';
-    tr.classList.add('ausente');
-
-    let textoAssinatura = '';
-    if(motivoValue === 'atestado') textoAssinatura = 'ATESTADO';
-    if(motivoValue === 'facultativo') textoAssinatura = 'P. FACULTATIVO';
-    if(motivoValue === 'feriado') textoAssinatura = 'FERIADO';
-    
-    tr.querySelectorAll('.motivo-text').forEach(el => el.textContent = textoAssinatura);
-
-  } else {
-    if (tr.dataset.ausente === '1') {
-      entInput.value = tr.dataset.oldEnt || '';
-      saiInput.value = tr.dataset.oldSai || '';
-    }
-    
-    tr.dataset.ausente = '0';
-    tr.classList.remove('ausente');
-    tr.querySelectorAll('.motivo-text').forEach(el => el.textContent = '');
-  }
-
-  atualizarTotais();
-}
-
-function atualizarTotais() {
-  let uteis=0, presencas=0, atestados=0;
-  document.querySelectorAll('#tabela-body tr').forEach(tr => {
-    if(tr.dataset.util !== '1') return;
-    uteis++;
-    
-    const sel = tr.querySelector('.motivo-select');
-    if (sel && sel.value === 'atestado') { atestados++; return; }
-    if (sel && (sel.value === 'feriado' || sel.value === 'facultativo')) { return; } 
-    
-    const e = tr.querySelector('.entrada-input')?.value;
-    const s = tr.querySelector('.saida-input')?.value;
-    if(e || s) presencas++;
-  });
-  document.getElementById('totals-cell').textContent =
-    `Dias úteis: ${uteis}   |   Presenças: ${presencas}   |   Atestados: ${atestados}`;
-}
-
-function voltarSetup() {
-  document.getElementById('setup-screen').style.display = 'flex';
-  document.getElementById('sheet-screen').style.display = 'none';
-}
-
-function exportarExcel() {
-  const wb = XLSX.utils.book_new();
-  const rows = [];
-  const mes  = document.getElementById('hdr-mes').textContent;
-  const nome = document.getElementById('hdr-nome').textContent || 'Não preenchido';
-  const lot  = document.getElementById('hdr-lotacao').textContent || 'Não preenchida';
-  const ent  = document.getElementById('hdr-entrada-txt').textContent;
-  const sai  = document.getElementById('hdr-saida-txt').textContent;
-
-  rows.push(["FOLHA DE PONTO — ESTAGIÁRIO"]);
-  rows.push([`Mês: ${mes}`, `Horário: ${ent} às ${sai}`]);
-  rows.push([`Lotação: ${lot}`]);
-  rows.push([`Nome: ${nome}`]);
-  rows.push([]);
-  rows.push(["Dia","Dia Semana","Entrada","Saída","Observação"]);
-
-  document.querySelectorAll('#tabela-body tr').forEach(tr => {
-    const dia  = tr.dataset.dia;
-    const abbr = tr.querySelector('.day-abbr')?.textContent?.split(/\s/)[0] || '';
-    const e    = tr.querySelector('.entrada-input')?.value || '';
-    const s    = tr.querySelector('.saida-input')?.value   || '';
-    let obs = '';
-    
-    const select = tr.querySelector('.motivo-select');
-    
-    if (tr.classList.contains('weekend')) {
-        obs = 'Final de semana';
-    } else if (select && select.value !== '') {
-        obs = select.options[select.selectedIndex].text.toUpperCase();
-    } else if (tr.dataset.feriado && tr.dataset.feriado !== '') {
-        obs = `Feriado Oficial — ${tr.dataset.feriado}`;
-    }
-
-    rows.push([dia, abbr, e, s, obs]);
-  });
-
-  rows.push([]);
-  // Continua pegando o nome do supervisor na exportação se ele foi preenchido na tela inicial
-  const supervisor = document.getElementById('inp-supervisor').value || '';
-  rows.push(["","","","",`Responsável: ${supervisor}`]);
-
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:5},{wch:12},{wch:10},{wch:10},{wch:36}];
-  XLSX.utils.book_append_sheet(wb, ws, "Folha de Ponto");
-
-  const tag = `${nome.replace(/\s+/g,'_')}_${mes.replace(/\s*\/\s*/g,'_')}`;
-  XLSX.writeFile(wb, `FolhaPonto_${tag}.xlsx`);
-}
-
-// Seleciona mês/ano atual ao carregar
-(function() {
-  const n = new Date();
-  document.getElementById('sel-month').value = n.getMonth();
-  document.getElementById('inp-year').value  = n.getFullYear();
-})();
-
-document.addEventListener('input', e => {
-  if(e.target.classList.contains('time-input')) atualizarTotais();
-});
-</script>
 </body>
 </html>
