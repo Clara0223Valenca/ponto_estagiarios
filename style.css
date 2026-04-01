@@ -259,11 +259,11 @@ body {
 .doc-header { border: 1.5px solid #000; margin-bottom: 0; }
 
 .doc-header-row-top { display: flex; border-bottom: 1px solid #000; }
-.doc-header-month   { flex: 1; padding: 5px 8px; border-right: 1px solid #000; font-size: 10.5pt; white-space: nowrap; }
-.doc-header-hours   { flex: 1.6; padding: 5px 8px; font-size: 10.5pt; }
+.doc-header-month   { flex: 1; padding: 4px 8px; border-right: 1px solid #000; font-size: 10.5pt; white-space: nowrap; }
+.doc-header-hours   { flex: 1.6; padding: 4px 8px; font-size: 10.5pt; }
 
-.doc-header-row-department { padding: 5px 8px; border-bottom: 1px solid #000; font-size: 10.5pt; min-height: 28px; }
-.doc-header-row-name       { padding: 5px 8px; font-size: 10.5pt; min-height: 28px; }
+.doc-header-row-department { padding: 4px 8px; border-bottom: 1px solid #000; font-size: 10.5pt; min-height: 26px; }
+.doc-header-row-name       { padding: 4px 8px; font-size: 10.5pt; min-height: 26px; }
 
 .field-label { font-weight: 700; }
 .field-value { font-weight: 400; }
@@ -280,7 +280,7 @@ body {
 .timesheet-table thead th {
   font-weight: 700;
   font-size: 10pt;
-  padding: 5px 4px;
+  padding: 4px 4px;
   border: 1px solid #000;
   border-top: 1.5px solid #000;
   text-align: center;
@@ -295,7 +295,7 @@ body {
   padding: 0;
   border-right: 1px solid #000;
   vertical-align: middle;
-  height: 25px;
+  height: 23px; 
 }
 .timesheet-table tbody td:last-child { border-right: none; }
 .timesheet-table tbody tr            { border-bottom: 1px solid #000; }
@@ -307,7 +307,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 3px;
-  height: 25px;
+  height: 22px;
   padding: 0 3px;
 }
 .day-num     { font-size: 10pt; font-weight: 700; min-width: 18px; text-align: center; }
@@ -315,8 +315,8 @@ body {
 .holiday-info { font-size: 6.5pt; font-style: italic; color: #555; margin-left: 1px; }
 
 /* Row state — weekend / holiday */
-tr.weekend { background: #d4d4d4; }
-tr.holiday { background: #d4d4d4; }
+tr.weekend { background: #e8e8e8; }
+tr.holiday { background: #e8e8e8; }
 tr.weekend .day-abbr,
 tr.holiday .day-abbr { color: #444; }
 
@@ -331,14 +331,31 @@ tr.holiday .day-abbr { color: #444; }
   width: 100%;
   text-align: center;
   padding: 0 3px;
-  height: 25px;
+  height: 22px;
   cursor: text;
 }
 tr.weekend .time-input,
 tr.holiday .time-input { cursor: default; color: #666; }
 
+/* Hide the dashes (--:--) when the time field is empty*/
+.time-input:invalid::-webkit-datetime-edit {
+  color: transparent;
+}
+
+.time-input:invalid::-webkit-calendar-picker-indicator {
+  visibility: hidden;
+}
+
+.time-input:focus::-webkit-datetime-edit {
+  color: #000;
+}
+
+.time-input:focus::-webkit-calendar-picker-indicator {
+  visibility: visible;
+}
+
 /* Signature cell */
-.sig-td { text-align: center; vertical-align: middle; height: 25px; }
+.sig-td { text-align: center; vertical-align: middle; height: 22px; }
 
 /* Row state — absent */
 .absence-label { display: none; font-size: 8pt; font-weight: 700; letter-spacing: 0.04em; }
@@ -372,20 +389,41 @@ tr.absent                  { background: #e8e8e8; }
 }
 
 /* ═══ DOCUMENT FOOTER ═════════════════════════════════════ */
-.doc-footer { margin-top: 50px; display: flex; flex-direction: column; align-items: center; }
-.signature-block { width: 260px; text-align: center; margin-top: 20px; }
+.doc-footer { 
+  margin-top: 25px; 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+} 
+.signature-block { 
+  width: 260px; 
+  text-align: center; 
+  margin-top: 70px; 
+}
 .signature-line  { border: none; border-bottom: 1.5px solid #000; margin-bottom: 6px; }
 .signature-role  { font-size: 8.5pt; color: #444; text-transform: uppercase; letter-spacing: 0.1em; }
 .generated-date  { font-size: 7pt; color: #999; margin-top: 16px; }
 
-/* ═══ PRINT ═══════════════════════════════════════════════ */
+/* ═══ PRINT RULES ═════════════════════════════════════════ */
+
+@page {
+  size: A4;
+  margin: 15mm 12mm 8mm 12mm; 
+}
+
 @media print {
   body { background: #fff; }
   .toolbar          { display: none !important; }
   #setup-screen     { display: none !important; }
   #sheet-screen     { display: block !important; }
   .document-area    { padding: 0; background: #fff; display: block; }
-  .document-sheet   { box-shadow: none; width: 100%; padding: 10mm 12mm 14mm; }
+  
+  .document-sheet   { 
+    box-shadow: none; 
+    width: 100%; 
+    padding: 0; 
+    min-height: auto;
+  }
 
   .col-absence,
   .timesheet-table thead th.col-absence { display: none !important; }
@@ -395,6 +433,12 @@ tr.absent                  { background: #e8e8e8; }
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+}
+
+/*Completely hides the schedule fields on weekends and on days off/holidays.*/
+tr.weekend .time-input,
+tr.absent .time-input {
+  display: none;
 }
 
 /* ═══ RESPONSIVE ══════════════════════════════════════════ */

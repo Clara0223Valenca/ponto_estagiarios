@@ -330,10 +330,10 @@ function renderTimesheet(holidayMap) {
         <span class="day-abbr">${WEEKDAY_ABBREVIATIONS[dayOfWeek]}${holidaySpan}</span>
       </div>`;
 
-    // Check-in cell
+    // Check-in cell 
     const checkInCell     = document.createElement('td');
     checkInCell.innerHTML = `
-      <input class="time-input check-in-input" type="time"
+      <input class="time-input check-in-input" type="time" required
         value="${shouldFillTimes ? dayCheckIn : ''}"
         ${isWeekend ? 'readonly tabindex="-1"' : ''}>`;
 
@@ -345,7 +345,7 @@ function renderTimesheet(holidayMap) {
     // Check-out cell
     const checkOutCell     = document.createElement('td');
     checkOutCell.innerHTML = `
-      <input class="time-input check-out-input" type="time"
+      <input class="time-input check-out-input" type="time" required
         value="${shouldFillTimes ? dayCheckOut : ''}"
         ${isWeekend ? 'readonly tabindex="-1"' : ''}>`;
 
@@ -403,7 +403,7 @@ function handleAbsenceChange(selectElement) {
   const selectedReason = selectElement.value;
 
   if (selectedReason !== '') {
-    // Persist current times before clearing them
+    // Only save the original values if the row was not already in an absence/holiday state
     if (row.dataset.isAbsent !== '1') {
       row.dataset.savedCheckIn  = checkInInput.value;
       row.dataset.savedCheckOut = checkOutInput.value;
@@ -418,7 +418,7 @@ function handleAbsenceChange(selectElement) {
     row.querySelectorAll('.absence-label').forEach(el => el.textContent = labelText);
 
   } else {
-    // Restore previously saved times
+    // Restore saved times
     if (row.dataset.isAbsent === '1') {
       checkInInput.value  = row.dataset.savedCheckIn  || '';
       checkOutInput.value = row.dataset.savedCheckOut || '';
@@ -442,27 +442,52 @@ function updateTotals() {
   let attendanceCount = 0;
   let medicalCount    = 0;
   let unexcusedCount  = 0;
+  let manualHolidays  = 0;
 
   document.querySelectorAll('#table-body tr').forEach(row => {
-    if (row.dataset.isWorkday !== '1') return;
-    workdayCount++;
-
+    // Determine the actual status of the day based on the class (API/Weekend) and the select (Manual)
+    const isWeekend = row.classList.contains('weekend');
+    const isApiHoliday = row.classList.contains('holiday');
+    
     const absenceSelect  = row.querySelector('.absence-select');
     const selectedReason = absenceSelect ? absenceSelect.value : '';
 
-    if (selectedReason === 'medical')   { medicalCount++;   return; }
-    if (selectedReason === 'unexcused') { unexcusedCount++; return; }
-    if (selectedReason === 'holiday' || selectedReason === 'optional') return;
+    const isManualHoliday = (selectedReason === 'holiday' || selectedReason === 'optional');
 
-    const hasCheckIn  = !!row.querySelector('.check-in-input')?.value;
-    const hasCheckOut = !!row.querySelector('.check-out-input')?.value;
-    if (hasCheckIn || hasCheckOut) attendanceCount++;
+    // 1. Workdays Calculation (Denominator)
+    if (!isWeekend && !isApiHoliday && !isManualHoliday) {
+      workdayCount++;
+    }
+
+    // 2. Occurrences Accounting
+    if (selectedReason === 'medical') {
+      medicalCount++;
+    } else if (selectedReason === 'unexcused') {
+      unexcusedCount++;
+    } else if (isManualHoliday) {
+      manualHolidays++;
+    }
+
+    // 3. Attendance Rule (Requires check-in and check-out, only on normal workdays)
+    if (!isWeekend && !isApiHoliday && !isManualHoliday && selectedReason === '') {
+      const checkIn  = row.querySelector('.check-in-input')?.value.trim();
+      const checkOut = row.querySelector('.check-out-input')?.value.trim();
+      
+      if (checkIn && checkOut) {
+        attendanceCount++;
+      }
+    }
   });
 
-  let summaryText = `Dias úteis: ${workdayCount}   |   Presenças: ${attendanceCount}   |   Atestados: ${medicalCount}`;
-  if (unexcusedCount > 0) summaryText += `   |   Faltas: ${unexcusedCount}`;
+  // Build the summary text (Absences and Medical Certificates always visible)
+  let summaryText = `Dias úteis: ${workdayCount}   |   Presenças: ${attendanceCount}   |   Faltas: ${unexcusedCount}   |   Atestados: ${medicalCount}`;
+  
+  if (manualHolidays > 0) {
+    summaryText += `   |   Feriados/ Pontos Facultativos: ${manualHolidays}`;
+  }
 
-  document.getElementById('totals-cell').textContent = summaryText;
+  const totalsCell = document.getElementById('totals-cell');
+  if (totalsCell) totalsCell.textContent = summaryText;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -516,6 +541,11 @@ function exportToExcel() {
     rows.push([dayNumber, weekdayAbbr, checkInValue, checkOutValue, observation]);
   });
 
+  // Get the totals summary to include in Excel
+  const totalsText = document.getElementById('totals-cell')?.textContent || '';
+
+  rows.push([]);
+  rows.push(['RESUMO DO MÊS', totalsText]); // Insert the totals row
   rows.push([]);
   rows.push(['', '', '', '', `Responsável: ${supervisorName}`]);
 
