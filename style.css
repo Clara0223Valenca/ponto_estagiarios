@@ -412,17 +412,26 @@ tr.absent                  { background: #e8e8e8; }
 }
 
 @media print {
-  body { background: #fff; }
+  body { background: #fff !important; }
   .toolbar          { display: none !important; }
   #setup-screen     { display: none !important; }
   #sheet-screen     { display: block !important; }
-  .document-area    { padding: 0; background: #fff; display: block; }
+  
+  .document-area    { 
+    padding: 0 !important; 
+    margin: 0 !important;
+    background: #fff !important; 
+    display: block !important; 
+    min-height: auto !important;
+  }
   
   .document-sheet   { 
-    box-shadow: none; 
-    width: 100%; 
-    padding: 0; 
-    min-height: auto;
+    box-shadow: none !important; 
+    width: 100% !important; 
+    padding: 0 !important; 
+    margin: 0 !important;
+    min-height: auto !important;
+    transform: none !important; /* <--- Isso mata o encolhimento do mobile na impressão */
   }
 
   .col-absence,
@@ -443,8 +452,7 @@ tr.absent .time-input {
 
 /* ═══ RESPONSIVE — MOBILE ════════════════════════════════ */
 
-@media (max-width: 680px) {
-
+@media screen and (max-width: 680px) {
   body {
     background: #fff;
   }
@@ -558,7 +566,7 @@ tr.absent .time-input {
 }
 
 /* ═══ VERY SMALL SCREENS (< 380px) ══════════════════════ */
-@media (max-width: 380px) {
+@media screen and (max-width: 380px) {
   .setup-card { padding: 1.2rem 0.9rem 1.8rem; }
   .setup-header h1 { font-size: 1.2rem; }
 }
