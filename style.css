@@ -334,6 +334,7 @@ tr.holiday .day-abbr { color: #444; }
   height: 22px;
   cursor: text;
 }
+
 tr.weekend .time-input,
 tr.holiday .time-input { cursor: default; color: #666; }
 
@@ -352,6 +353,19 @@ tr.holiday .time-input { cursor: default; color: #666; }
 
 .time-input:focus::-webkit-calendar-picker-indicator {
   visibility: visible;
+}
+
+.time-input::-webkit-datetime-edit {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+@media print {
+  .time-input::-webkit-calendar-picker-indicator {
+    display: none !important;
+  }
 }
 
 /* Signature cell */
