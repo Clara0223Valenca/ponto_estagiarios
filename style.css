@@ -375,6 +375,8 @@ tr.absent                  { background: #e8e8e8; }
   background: #fff;
   outline: none;
   cursor: pointer;
+  background: no-repeat; 
+  background-position: 100%;
 }
 
 /* Totals row */
