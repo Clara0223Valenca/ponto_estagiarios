@@ -447,7 +447,7 @@ tr.absent                  { background: #e8e8e8; }
     padding: 0 !important; 
     margin: 0 !important;
     min-height: auto !important;
-    transform: none !important; /* <--- Isso mata o encolhimento do mobile na impressão */
+    transform: none !important; 
   }
 
   .col-absence,
