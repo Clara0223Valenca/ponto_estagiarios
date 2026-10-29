@@ -122,11 +122,11 @@ function computeHolidaysMath(year) {
   const addHoliday = (date, name) => { holidayMap[formatDateKey(date)] = name; };
 
   // Fixed-date national holidays
-  addHoliday(new Date(year,  0,  1), 'Confraternização Universal');
+  addHoliday(new Date(year,  0,  1), 'Ano Novo');
   addHoliday(new Date(year,  3, 21), 'Tiradentes');
   addHoliday(new Date(year,  4,  1), 'Dia do Trabalho');
   addHoliday(new Date(year,  8,  7), 'Independência do Brasil');
-  addHoliday(new Date(year,  9, 12), 'Nossa Senhora Aparecida');
+  addHoliday(new Date(year,  9, 12), 'N. Sra. Aparecida');
   addHoliday(new Date(year, 10,  2), 'Finados');
   addHoliday(new Date(year, 10, 15), 'Proclamação da República');
   addHoliday(new Date(year, 10, 20), 'Consciência Negra');
